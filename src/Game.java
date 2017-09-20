@@ -16,6 +16,7 @@ public class Game {
 	private int[] cols = new int[N*N];
 	
 	private int playerNum;
+	private int turn;
 	private int port;
 	private String host;
 	
@@ -74,6 +75,9 @@ public class Game {
 	}
 	
 	public void run() {
+		String winner = null;
+		turn = 0;
+		
 		clearBoard();
 		
 		try {
@@ -84,19 +88,31 @@ public class Game {
 			if (playerNum == 1) {
 				printBoard();
 				playTurn();
+				
+				System.out.println("Aguarde o seu turno");
 			}
 			
 			while ((fromOtherPlayer = otherPlayerIn.readLine()) != null) {
 				updateGameState(fromOtherPlayer);
 				
+				if ((winner = gameWinner()) != null || turn >= 9)
+					break;
+				
 				System.out.println("Sua vez");
 	        	printBoard();
 	            
-	        	if (fromOtherPlayer.equals("Bye."))
-	                break;
-	            
 	            playTurn();
+	            
+	            if ((winner = gameWinner()) != null || turn >= 9)
+	            	break;
+	            
+	    		System.out.println("Aguarde o seu turno");
 			}
+			
+			if (winner != null)
+				System.out.println("Vencedor: " + winner);
+			else
+				System.out.println("Empate!");
 			
 			close();
 		}
@@ -135,9 +151,36 @@ public class Game {
 		}
 		
 		printBoard();
-		
-		System.out.println("Aguarde o seu turno");
 		sendGameState();
+		turn++;
+	}
+
+	private String gameWinner() {
+		// Checa linhas
+		for (int i = 0; i < 3; i++) {
+			if (board[i][0].equals(board[i][1]) &&
+				board[i][1].equals(board[i][2]))
+				return board[i][0];
+		}
+		
+		// Checa colunas
+		for (int j = 0; j < 3; j++) {
+			if (board[0][j].equals(board[1][j]) &&
+				board[1][j].equals(board[2][j]))
+				return board[0][j];
+		}
+		
+		// Checa diagonal principal
+		if (board[0][0].equals(board[1][1]) &&
+			board[1][1].equals(board[2][2]))
+			return board[0][0];
+		
+		// Checa diagonal secundaria
+		if (board[0][2].equals(board[1][1]) &&
+			board[1][1].equals(board[2][0]))
+			return board[0][2];
+		
+		return null;
 	}
 	
 	private void sendGameState() {
@@ -152,6 +195,8 @@ public class Game {
 	private void updateGameState(String state) {
 		for(int i = 0; i < N*N; i++)
 			board[rows[i]][cols[i]] = String.valueOf(state.charAt(i));
+		
+		turn++;
 	}
 	
 	private void close() throws IOException {
